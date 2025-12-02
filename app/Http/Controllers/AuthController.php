@@ -19,7 +19,7 @@ class AuthController extends Controller
         'name'=>$request->name,
         'email'=>$request->email,
         'password'=>$request->password,
-        'role'=>'user'
+        'role_id'=>2
                           ]);    
 
         $token = JWTAuth::fromUser($user);
@@ -41,13 +41,14 @@ class AuthController extends Controller
          if (!Hash::check($data['password'], $user->password)) {
         return ApiResponse::error(401, null, 'Invalid credentials');
           }
+      $user->load('role');
       $token = JWTAuth::fromUser($user);
      return ApiResponse::success(200, ['user' =>
          [
               'id' => $user->id,
               'name' => $user->name,
               'email' => $user->email,
-              'role' => $user->role,
+              'role' => $user->role->name,
           ]
        , 'token' => $token],'User logged in successfully');
 
