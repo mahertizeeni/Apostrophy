@@ -17,6 +17,7 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
+    // List all users
     public function index()
     {
       $authUser = JWTAuth::user();
@@ -24,8 +25,10 @@ class UserController extends Controller
         {
             return ApiResponse::error(401, null, 'Token not provided');
         }
-    $this->authorize('viewAny');
-      $users = User::all();
+     $this->authorize('viewAny', $authUser);
+
+    $users = User::with('role')->where('role_id', 2)->get();
+      
       return ApiResponse::success(200, $users, 'Users retrieved successfully');
     }
 
@@ -48,6 +51,7 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
+    // Show a specific user
     public function show(string $id)
     {
       
@@ -74,36 +78,37 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    //  Update a specific user
+    public function update(Request $request, string $id)
+    {
+     $authUser = JWTAuth::user();
+     abort_if(!$authUser, 401, 'Token not provided');
 
-public function update(Request $request, string $id)
-{
-    $authUser = JWTAuth::user();
-    abort_if(!$authUser, 401, 'Token not provided');
+     $selectedUser = User::find($id);
+     abort_if(!$selectedUser, 404, 'User not found');
 
-    $selectedUser = User::find($id);
-    abort_if(!$selectedUser, 404, 'User not found');
+     $this->authorize('update', $selectedUser);
 
-    $this->authorize('update', $selectedUser);
-
-    $data = $request->validate([
+     $data = $request->validate([
         'name' => 'sometimes|string|max:255',
         'email' => 'sometimes|email|unique:users,email,' . $selectedUser->id,
-    ]);
+        'password' => ['sometimes','confirmed',Password::min(8)->letters()->mixedCase()->numbers()]
+     ]);
 
 
 
-    $selectedUser->update($data);
+     $selectedUser->update($data);
 
-    $newToken = null;
-    if ($authUser->id === $selectedUser->id) {
-        $newToken = JWTAuth::fromUser($selectedUser);
-    }
+     $newToken = null;
+     if ($authUser->id === $selectedUser->id) {
+         $newToken = JWTAuth::fromUser($selectedUser);
+     }
 
-    return ApiResponse::success(200, [
+     return ApiResponse::success(200, [
         'user' => $selectedUser,
         'token' => $newToken
-    ], 'User updated successfully');
-}
+     ], 'User updated successfully');
+    }
 
 
 
@@ -111,6 +116,7 @@ public function update(Request $request, string $id)
     /**
      * Remove the specified resource from storage.
      */
+    // Delete a specific user
     public function destroy(string $id)
     {
       $authUser = JWTAuth::user();

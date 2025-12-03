@@ -19,7 +19,7 @@ class AuthController extends Controller
         'name'=>$request->name,
         'email'=>$request->email,
         'password'=>$request->password,
-        'role_id'=>2
+        'role_id'=>2  // Default role ID for regular users
                           ]);    
 
         $token = JWTAuth::fromUser($user);
